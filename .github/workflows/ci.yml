@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        working-directory: backend
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Lint & tests (placeholder)
+        working-directory: backend
+        run: |
+          echo "Add your tests here"
+          python -c "print('ok')"
+
+      - name: Build Docker image
+        working-directory: backend
+        run: |
+          docker build -t edumentor-api:ci .
+
+  # Optional publish to Azure Container Registry (enable when ready)
+  publish:
+    if: github.ref == 'refs/heads/main'
+    needs: [test-and-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}  # service principal JSON
+
+      - name: Docker login ACR
+        run: |
+          az acr login --name ${{ secrets.ACR_NAME }}
+
+      - name: Build & Push
+        working-directory: backend
+        run: |
+          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/edumentor-api:${{ github.sha }} .
+          docker push ${{ secrets.ACR_NAME }}.azurecr.io/edumentor-api:${{ github.sha }}
+
+  # Optional deploy to Azure Web App for Containers
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: [publish]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          images: ${{ secrets.ACR_NAME }}.azurecr.io/edumentor-api:${{ github.sha }}

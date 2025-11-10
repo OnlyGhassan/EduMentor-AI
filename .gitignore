@@ -1,0 +1,66 @@
+# ---------------------
+# PYTHON
+# ---------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# ---------------------
+# FASTAPI / BACKEND
+# ---------------------
+backend/.env
+backend/.env.*
+backend/app/__pycache__/
+backend/alembic/__pycache__/
+backend/alembic/versions/*.pyc
+
+# Cache folders
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.ruff_cache/
+
+# ---------------------
+# FRONTEND
+# ---------------------
+frontend/__pycache__/
+frontend/.streamlit/secrets.toml
+frontend/.streamlit/**/secrets.toml
+
+# Node
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+dist/
+build/
+
+# ---------------------
+# OS / IDE files
+# ---------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ---------------------
+# DOCKER
+# ---------------------
+*.pid
+*.log
+docker.log
+docker-compose.override.yml
+
+# ---------------------
+# MISC
+# ---------------------
+*.bak
+*.tmp
