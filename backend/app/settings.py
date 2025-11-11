@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     ENV: str = "dev"
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:8501,http://127.0.0.1:8501"
+    CORS_ORIGINS: str = "http://localhost:8501,http://127.0.0.1:8501,http://172.24.124.9:8501"
 
     # OpenAI
     OPENAI_API_KEY: str

@@ -15,8 +15,8 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == user_in.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    print("Incoming password:", user_in.password)
-    print("Byte length:", len(user_in.password.encode()))
+    # print("Incoming password:", user_in.password)
+    # print("Byte length:", len(user_in.password.encode()))
 
 
     user = User(
@@ -35,6 +35,8 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # form.username is the email for our case
     user = db.query(User).filter(User.email == form.username).first()
+    print(User.email)
+    print(form.username)
     if not user or not verify_password(form.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
     token = create_access_token(sub=str(user.id))

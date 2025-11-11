@@ -26,6 +26,19 @@ def build_context(db_sess: DBSession, include_recent: int = 30):
         msgs.append({"role": m.role, "content": m.content})
     return msgs
 
+# @router.get("/sessions")
+# def sessions_alias(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+#     sessions = db.query(DBSession).filter(DBSession.user_id == current_user.id).all()
+#     return [
+#         {
+#             "id": str(s.id),
+#             "name": s.name,
+#             "created_at": s.created_at.isoformat()
+#         }
+#         for s in sessions
+#     ]
+
+
 @router.get("/list", response_model=list[dict])
 def list_sessions(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     sessions = db.query(DBSession).filter(DBSession.user_id == current_user.id).order_by(DBSession.created_at.desc()).all()

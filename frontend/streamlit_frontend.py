@@ -35,17 +35,176 @@ ui_lang = st.sidebar.radio(
 )
 is_ar_ui = (ui_lang == "العربية")
 
+# with st.sidebar:
+#     if not st.user.is_logged_in:
+#         login_label = "Log in" if not is_ar_ui else "تسجيل الدخول"
+#         if st.button(login_label, use_container_width=True):
+#             st.login()
+#     else:
+#         logout_label = "Log out" if not is_ar_ui else "تسجيل الخروج"
+#         greeting = f"Hello, {st.user.name}!" if not is_ar_ui else f"مرحبًا، {st.user.name}!"
+#         st.write(greeting)
+#         if st.button(logout_label, use_container_width=True):
+#             st.logout()
+
+
+
+# --- Config ---
+BACKEND_BASE = st.secrets.get("BACKEND_BASE", "http://localhost:8000")
+is_ar_ui = st.secrets.get("AR_UI", False)
+
+# --- Session helpers ---
+def set_auth(token: str, user: dict):
+    st.session_state["token"] = token
+    st.session_state["user"] = user
+
+def clear_auth():
+    for k in ("token", "user"):
+        if k in st.session_state:
+            del st.session_state[k]
+
+def get_token() -> Optional[str]:
+    return st.session_state.get("token")
+
+def api_request(method: str, path: str, **kwargs):
+    """Calls the FastAPI backend and automatically attaches Bearer token if present."""
+    headers = kwargs.pop("headers", {})
+    token = get_token()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    url = f"{BACKEND_BASE.rstrip('/')}/{path.lstrip('/')}"
+    resp = requests.request(method, url, headers=headers, **kwargs)
+    # Raise nice error for debugging
+    if not resp.ok:
+        try:
+            detail = resp.json()
+        except Exception:
+            detail = resp.text
+        raise RuntimeError(f"{method} {path} failed [{resp.status_code}]: {detail}")
+    return resp
+
+# --- UI labels ---
+TXT = {
+    "title": "EduMentorAI",
+    "hello": "Hello",
+    "login": "Log in",
+    "logout": "Log out",
+    "register": "Register",
+    "email": "Email",
+    "name": "Name",
+    "password": "Password",
+    "or": "— or —",
+    "you_are_in": "You are logged in as",
+    "list_sessions": "List My Sessions",
+    "create_session": "Create a Session",
+    "session_created": "Session created!",
+}
+
+TXT_AR = {
+    "title": "إديومينتورAI",
+    "hello": "مرحبًا",
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "register": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "name": "الاسم",
+    "password": "كلمة المرور",
+    "or": "— أو —",
+    "you_are_in": "تم تسجيل دخولك باسم",
+    "list_sessions": "عرض جلساتي",
+    "create_session": "إنشاء جلسة",
+    "session_created": "تم إنشاء الجلسة!",
+}
+L = TXT_AR if is_ar_ui else TXT
+
+st.set_page_config(page_title=L["title"], layout="wide")
+st.title(L["title"])
+
+# --- Auth sidebar ---
 with st.sidebar:
-    if not st.user.is_logged_in:
-        login_label = "Log in" if not is_ar_ui else "تسجيل الدخول"
-        if st.button(login_label, use_container_width=True):
-            st.login()
+    if "token" not in st.session_state:
+        st.subheader(L["login"])
+
+        # Login form
+        with st.form("login_form", clear_on_submit=False):
+            email = st.text_input(L["email"])
+            password = st.text_input(L["password"], type="password")
+            do_login = st.form_submit_button(L["login"])
+        if do_login:
+            # FastAPI expects OAuth2PasswordRequestForm (form encoded) with username/password fields.
+            # We pass email into "username".
+            try:
+                resp = api_request(
+                    "POST",
+                    "/auth/login",
+                    data={"username": email, "password": password},
+                )
+                token = resp.json()["access_token"]
+                # Get current user using /auth/me
+                me = api_request("GET", "/auth/me").json()
+                set_auth(token, me)
+                st.success(f"{L['you_are_in']} {me['name']}")
+            except Exception as e:
+                st.error(str(e))
+
+        st.write(L["or"])
+
+        # Register form
+        with st.form("register_form", clear_on_submit=False):
+            r_name = st.text_input(L["name"], key="reg_name")
+            r_email = st.text_input(L["email"], key="reg_email")
+            r_password = st.text_input(L["password"], type="password", key="reg_pass")
+            do_register = st.form_submit_button(L["register"])
+        if do_register:
+            try:
+                resp = api_request(
+                    "POST",
+                    "/auth/register",
+                    json={"name": r_name, "email": r_email, "password": r_password},
+                )
+                st.success(L["register"] + " ✔️ — now log in.")
+            except Exception as e:
+                st.error(str(e))
+
     else:
-        logout_label = "Log out" if not is_ar_ui else "تسجيل الخروج"
-        greeting = f"Hello, {st.user.name}!" if not is_ar_ui else f"مرحبًا، {st.user.name}!"
-        st.write(greeting)
-        if st.button(logout_label, use_container_width=True):
-            st.logout()
+        user = st.session_state["user"]
+        st.write(f"{L['hello']}, {user['name']}!")
+        if st.button(L["logout"], use_container_width=True):
+            clear_auth()
+            st.rerun()
+
+# --- Protected actions (examples) ---
+if "token" in st.session_state:
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button(L["list_sessions"]):
+            try:
+                data = api_request("GET", "/session/list").json()
+                st.json(data)
+            except Exception as e:
+                st.error(str(e))
+    with c2:
+        with st.form("new_session"):
+            sname = st.text_input(L["create_session"], value="Untitled Session")
+            create = st.form_submit_button("OK")
+        if create:
+            try:
+                # you might have a POST /session/create in your real code;
+                # if not, this is a placeholder to show how to call protected endpoints.
+                # Replace with your actual "create session" endpoint when available.
+                st.info("Call your create-session endpoint here.")
+            except Exception as e:
+                st.error(str(e))
+
+
+
+
+
+
+
+
+
+
 
 # Create new session button (unique key)
 if st.sidebar.button("➕ New Session" if not is_ar_ui else "➕ جلسة جديدة", key="new_session_btn", use_container_width=True):
