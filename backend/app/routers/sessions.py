@@ -180,6 +180,7 @@ def generate_action(
     lang: Optional[str] = Form("en"),
     difficulty: Optional[str] = Form(None),
     num_questions: Optional[int] = Form(None),
+    text_grammar: Optional[str] = Form(None),
     report_type: Optional[str] = Form(None)
 ):
     valid_actions = {"summarize","quiz","flashcards","resources","report","grammar"}
@@ -198,12 +199,7 @@ def generate_action(
         "summarize": "Summarize the following content clearly and concisely. if there was (Text bar input) use it only without (Documents content)",
         "flashcards": "Generate 5 study flashcards in Q&A format from the content.",
         "resources": "Suggest 3 free online resources to study the topic of the content.",
-        "grammar": (
-            "Analyze the following text carefully.\n\n"
-            "1️⃣ Show the original text with the errors highlighted using Markdown "
-            "(e.g., ~~wrong word~~ (error type)).\n"
-            "2️⃣ Provide the corrected text (fully rewritten and polished)."
-        ),
+        
     }
 
     if action == "quiz":
@@ -214,7 +210,8 @@ def generate_action(
             "If multiple documents are provided, distribute coverage roughly evenly across them, "
             "but the TOTAL number of questions must remain exactly as requested. "
             "Return ONLY a valid JSON array (no code fences, no prose) using this exact shape:\n"
-            "[{\"question\": \"...\", \"options\": [\"A) ...\", \"B) ...\", \"C) ...\", \"D) ...\"], \"answer\": \"A\"}]"
+            "[{\"question\": \"...\", \"options\": [\"A) ...\", \"B) ...\", \"C) ...\", \"D) ...\"], \"answer\": \"A\"}]\n"
+            "Where 'answer' is just the correct LETTER (A, B, C, or D)."
         )
     elif action == "report":
         base_prompt = (
@@ -224,11 +221,28 @@ def generate_action(
             "Summarize accuracy, identify strengths and weaknesses, and provide constructive feedback with "
             "suggestions for improvement. Use the given data to produce a meaningful report."
         )
+    elif action == "grammar":
+        if not text_grammar:
+            raise HTTPException(status_code=400, detail="No text provided for grammar check")
+
+        base_prompt = (
+            f"Analyze the following English text for grammar, spelling, and clarity errors:\n\n{text_grammar}\n\n"
+            "Please provide:\n"
+            "1️⃣ The original text with errors highlighted using Markdown "
+            "(e.g., ~~wrong word~~ (error type)).\n"
+            "2️⃣ The corrected version (fully rewritten and polished)."
+        )
     else:
         base_prompt = prompt_map.get(action, "")
 
     system_lang = "Respond in Arabic." if lang == "ar" else "Respond in English."
-    combined = f"{base_prompt}\n\nText bar input:\n{text}\n\nDocuments content:\n{docs_text}"
+
+    
+    if action == "grammar":
+        combined = base_prompt
+    else:
+        # --- Combine all content for model ---
+        combined = f"{base_prompt}\n\nText bar input:\n{text}\n\nDocuments content:\n{docs_text}"
 
     messages_for_model = build_context(s)
     messages_for_model.insert(1, {"role":"system", "content": system_lang})
@@ -270,3 +284,262 @@ def generate_action(
             "documents": [{"id": str(d.id), "filename": d.filename, "content": d.content} for d in s.documents],
         }
     }
+
+
+
+
+
+@router.post("/{sid}/transcribe")
+async def transcribe_audio(
+    sid: UUID,
+    file: UploadFile = File(...),
+    lang: Optional[str] = Form("en"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    s = db.query(DBSession).filter(DBSession.id == sid, DBSession.user_id == current_user.id).first()
+    if not s:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    temp_path = "temp_audio.wav"
+    audio_bytes = await file.read()
+    with open(temp_path, "wb") as f:
+        f.write(audio_bytes)
+
+    try:
+        from ..utils.openai_client import client
+        with open(temp_path, "rb") as f:
+            transcript = client.audio.transcriptions.create(
+                model="gpt-4o-transcribe",
+                file=f,
+                language=lang or "en"
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+    finally:
+        import os
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    # db.add(Message(
+    #     id=uuid4(),
+    #     session_id=s.id,
+    #     role="assistant",
+    #     type="transcription",
+    #     content=transcript.text,
+    #     created_at=datetime.utcnow()
+    # ))
+    # db.commit()
+
+    return {"transcription": transcript.text}
+
+
+
+
+
+# @router.post("/{sid}/transcribe")
+# async def transcribe_audio(
+#     sid: UUID,
+#     file: UploadFile = File(...),
+#     lang: Optional[str] = Form("en"),
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     import os
+#     from pydub import AudioSegment
+#     from tempfile import NamedTemporaryFile
+
+#     s = db.query(DBSession).filter(DBSession.id == sid, DBSession.user_id == current_user.id).first()
+#     if not s:
+#         raise HTTPException(status_code=404, detail="Session not found")
+
+#     # Save uploaded Streamlit file to temp path
+#     audio_bytes = await file.read()
+#     with NamedTemporaryFile(delete=False, suffix=".wav") as temp_in:
+#         temp_in.write(audio_bytes)
+#         temp_in_path = temp_in.name
+
+#     # Normalize & re-encode to standard mono 16kHz PCM WAV
+#     temp_out_path = temp_in_path.replace(".wav", "_norm.wav")
+#     try:
+#         sound = AudioSegment.from_file(temp_in_path)
+#         sound = sound.set_frame_rate(16000).set_channels(1)
+#         sound.export(temp_out_path, format="wav")
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=f"Audio format error: {e}")
+
+#     try:
+#         from ..utils.openai_client import client
+#         with open(temp_out_path, "rb") as f:
+#             transcript = client.audio.transcriptions.create(
+#                 model="gpt-4o-transcribe",
+#                 file=f,
+#                 language=lang or "en"
+#             )
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+#     finally:
+#         for p in (temp_in_path, temp_out_path):
+#             if os.path.exists(p):
+#                 os.remove(p)
+
+#     # Store transcription message in DB
+#     # db.add(Message(
+#     #     id=uuid4(),
+#     #     session_id=s.id,
+#     #     role="assistant",
+#     #     type="transcription",
+#     #     content=transcript.text,
+#     #     created_at=datetime.utcnow()
+#     # ))
+#     # db.commit()
+
+#     return {"transcription": transcript.text}
+
+
+# @router.post("/{sid}/transcribe")
+# async def transcribe_audio(
+#     sid: UUID,
+#     file: UploadFile = File(...),
+#     lang: Optional[str] = Form("en"),
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     s = db.query(DBSession).filter(DBSession.id == sid, DBSession.user_id == current_user.id).first()
+#     if not s:
+#         raise HTTPException(status_code=404, detail="Session not found")
+
+#     input_path = "temp_input"
+#     output_path = "temp_audio.wav"
+#     audio_bytes = await file.read()
+#     with open(input_path, "wb") as f:
+#         f.write(audio_bytes)
+
+#     # Convert to proper mono 16kHz WAV
+#     sound = AudioSegment.from_file(input_path)
+#     sound = sound.set_frame_rate(16000).set_channels(1)
+#     sound.export(output_path, format="wav")
+
+#     try:
+#         from ..utils.openai_client import client
+#         with open(output_path, "rb") as f:
+#             transcript = client.audio.transcriptions.create(
+#                 model="gpt-4o-transcribe",
+#                 file=f,
+#                 language=lang or "en"
+#             )
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+#     finally:
+#         for p in (input_path, output_path):
+#             if os.path.exists(p):
+#                 os.remove(p)
+
+#     # db.add(Message(
+#     #     id=uuid4(),
+#     #     session_id=s.id,
+#     #     role="assistant",
+#     #     type="transcription",
+#     #     content=transcript.text,
+#     #     created_at=datetime.utcnow()
+#     # ))
+#     # db.commit()
+
+#     return {"transcription": transcript.text}
+
+
+
+
+
+
+# @router.post("/{sid}/transcribe")
+# async def transcribe_audio(
+#     sid: UUID,
+#     file: UploadFile = File(...),
+#     lang: Optional[str] = Form("en"),  # 👈 allow manual language override
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     s = db.query(DBSession).filter(DBSession.id == sid, DBSession.user_id == current_user.id).first()
+#     if not s:
+#         raise HTTPException(status_code=404, detail="Session not found")
+
+#     # Save temp audio
+#     temp_path = "temp_audio.wav"
+#     audio_bytes = await file.read()
+#     with open(temp_path, "wb") as f:
+#         f.write(audio_bytes)
+
+#     try:
+#         from ..utils.openai_client import client
+#         with open(temp_path, "rb") as f:
+#             transcript = client.audio.transcriptions.create(
+#                 model="gpt-4o-transcribe",
+#                 file=f,
+#                 language=lang or "en"  # 👈 enforce or default to English
+#             )
+#             print(f)
+#             print(transcript.text)
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+#     finally:
+#         import os
+#         if os.path.exists(temp_path):
+#             os.remove(temp_path)
+
+#     # Save transcript
+#     # db.add(Message(
+#     #     id=uuid4(),
+#     #     session_id=s.id,
+#     #     role="assistant",
+#     #     type="transcription",
+#     #     content=transcript.text,
+#     #     created_at=datetime.utcnow()
+#     # ))
+#     # db.commit()
+
+#     return {"transcription": transcript.text, "language": lang or "en"}
+
+
+
+
+
+# @router.post("/{sid}/transcribe")
+# async def transcribe_audio(
+#     sid: UUID,
+#     file: UploadFile = File(...),
+#     current_user: User = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     s = db.query(DBSession).filter(DBSession.id == sid, DBSession.user_id == current_user.id).first()
+#     if not s:
+#         raise HTTPException(status_code=404, detail="Session not found")
+
+#     # Save and transcribe audio file
+#     audio_bytes = await file.read()
+#     temp_path = "temp_audio.wav"
+#     with open(temp_path, "wb") as f:
+#         f.write(audio_bytes)
+
+#     try:
+#         from ..utils.openai_client import client
+#         with open(temp_path, "rb") as f:
+#             transcript = client.audio.transcriptions.create(
+#                 model="gpt-4o-transcribe",
+#                 file=f
+#             )
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Transcription failed: {e}")
+
+#     # Save transcript as assistant message
+#     # db.add(Message(
+#     #     id=uuid4(),
+#     #     session_id=s.id,
+#     #     role="assistant",
+#     #     type="transcription",
+#     #     content=transcript.text,
+#     #     created_at=datetime.utcnow()
+#     # ))
+#     # db.commit()
+
+#     return {"transcription": transcript.text}

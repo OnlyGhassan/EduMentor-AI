@@ -9,7 +9,7 @@ def generate_title(prompt: str) -> str:
         res = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Generate a short (3–10 words) title summarizing the topic. Only return the title."},
+                {"role": "system", "content": "Generate a short (3–5 words) title summarizing the topic of this text. Or generate the title based on the action. Only return the title."},
                 {"role": "user", "content": prompt},
             ],
         )

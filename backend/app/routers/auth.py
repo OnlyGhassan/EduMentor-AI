@@ -35,6 +35,12 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # form.username is the email for our case
     user = db.query(User).filter(User.email == form.username).first()
+    print(user.email)
+    print(user.id)
+    print(user.name)
+    print(user.registry)
+    print(user.sessions)
+    print(db.query(User).all())
     print(User.email)
     print(form.username)
     if not user or not verify_password(form.password, user.hashed_password):
