@@ -23,7 +23,7 @@ jobs:
 
       - name: Deploy on Azure VM
         run: |
-          ssh -o StrictHostKeyChecking=no -i vm_key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i vm_key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
             set -e
             cd EduMentor-AI
             git pull origin main
@@ -36,7 +36,7 @@ jobs:
             docker compose -f compose.yml --env-file .env pull
             docker compose -f compose.yml --env-file .env build --pull
             docker compose -f compose.yml --env-file .env up -d
-          EOF
+          "
 
 
 
