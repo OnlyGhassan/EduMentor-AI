@@ -17,12 +17,12 @@ jobs:
 
       - name: Add SSH key
         run: |
-          echo "${{ secrets.PROD_VM_SSH_KEY }}" > vm_key.pem
+          echo "${{ secrets.VM_SSH_KEY }}" > vm_key.pem 
           chmod 600 vm_key.pem
 
       - name: Deploy on Azure VM
         run: |
-          ssh -o StrictHostKeyChecking=no -i vm_key.pem ${{ secrets.PROD_VM_USER }}@${{ secrets.PROD_VM_HOST }} "
+          ssh -o StrictHostKeyChecking=no -i vm_key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
             cd Edu_Mentor_AI;
             git pull origin main;
             cd deployment;
