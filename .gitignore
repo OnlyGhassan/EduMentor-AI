@@ -18,6 +18,7 @@ ENV/
 # FASTAPI / BACKEND
 # ---------------------
 backend/.env
+deployment/.env
 backend/.env.*
 backend/app/__pycache__/
 backend/alembic/__pycache__/

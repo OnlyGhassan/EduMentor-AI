@@ -192,8 +192,10 @@ def generate_action(
         raise HTTPException(status_code=404, detail="Session not found")
 
     docs_text = "\n\n".join([d.content for d in s.documents])
-    if not docs_text and not text:
+    # if not docs_text and not text:
+    if action != "grammar" and not docs_text and not text:
         raise HTTPException(status_code=400, detail="No documents or additional text provided for this action")
+    
 
     prompt_map = {
         "summarize": "Summarize the following content clearly and concisely. if there was (Text bar input) use it only without (Documents content)",

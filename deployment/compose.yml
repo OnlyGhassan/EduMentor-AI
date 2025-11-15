@@ -1,0 +1,238 @@
+
+
+services:
+  db:
+    image: postgres:16
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${APP_DB_USER}
+      POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+      POSTGRES_DB: ${APP_DB_NAME}
+    volumes:
+      - edumentor-pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: always
+    networks:
+      - edumentor-net
+
+  api:
+    build:
+      context: ..
+      dockerfile: deployment/api.Dockerfile
+    depends_on:
+      - db
+    env_file:
+      - .env
+    environment:
+      APP_DB_HOST: ${APP_DB_HOST}
+      APP_DB_PORT: ${APP_DB_PORT}
+      APP_DB_NAME: ${APP_DB_NAME}
+      APP_DB_USER: ${APP_DB_USER}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    working_dir: /app
+    volumes:
+      - ../app:/app
+    ports:
+      - "5000:5000"
+    restart: always
+    networks:
+      - edumentor-net
+
+  ui:
+    build:
+      context: ..
+      dockerfile: deployment/ui.Dockerfile
+    depends_on:
+      - api
+    env_file:
+      - .env
+    environment:
+      BACKEND_BASE_URL: http://api:5000
+    working_dir: /app
+    volumes:
+      - ../app/frontend.py:/app/frontend.py
+    ports:
+      - "8501:8501"
+    restart: always
+    networks:
+      - edumentor-net
+
+volumes:
+  edumentor-pgdata:
+
+networks:
+  edumentor-net:
+    driver: bridge
+
+
+
+
+
+
+
+
+
+# services:
+#   db:
+#     image: postgres:16
+#     env_file:
+#       - .env
+#     environment:
+#       POSTGRES_USER: ${APP_DB_USER}
+#       POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+#       POSTGRES_DB: ${APP_DB_NAME}
+#     volumes:
+#       - edumentor-pgdata:/var/lib/postgresql/data
+#     ports:
+#       - "5432:5432"
+#     restart: always
+
+#   api:
+#     build:
+#       context: ..
+#       dockerfile: deployment/api.Dockerfile
+#     depends_on:
+#       - db
+#     env_file:
+#       - .env
+#     environment:
+#       APP_DB_HOST: ${APP_DB_HOST}
+#       APP_DB_PORT: ${APP_DB_PORT}
+#       APP_DB_NAME: ${APP_DB_NAME}
+#       APP_DB_USER: ${APP_DB_USER}
+#       APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+#     working_dir: /app
+#     volumes:
+#       - ../app:/app
+#     ports:
+#       - "5000:5000"
+#     restart: always
+
+#   ui:
+#     build:
+#       context: ..
+#       dockerfile: deployment/ui.Dockerfile
+#     depends_on:
+#       - api
+#     env_file:
+#       - .env
+#     environment:
+#       BACKEND_BASE_URL: http://api:5000
+#     working_dir: /app
+#     volumes:
+#       - ../app/frontend.py:/app/frontend.py
+#     ports:
+#       - "8501:8501"
+#     restart: always
+#     networks:
+#       - edumentor-net
+
+# volumes:
+#   edumentor-pgdata:
+
+# networks:
+#   edumentor-net:
+#     driver: bridge
+
+
+
+
+
+
+
+
+
+# version: "3.9"
+
+# env_file:
+#   - ../.env
+
+# services:
+#   db:
+#     image: postgres:16
+#     environment:
+#       POSTGRES_USER: ${APP_DB_USER}
+#       POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+#       POSTGRES_DB: ${APP_DB_NAME}
+#     volumes:
+#       - edumentor-pgdata:/var/lib/postgresql/data
+#     ports:
+#       - "5432:5432"   # optional for local access
+#     restart: always
+
+#   api:
+#     build:
+#       context: ..
+#       dockerfile: deployment/api.Dockerfile
+#     depends_on:
+#       - db
+#     environment:
+#       POSTGRES_HOST: ${APP_DB_HOST}
+#       POSTGRES_PORT: ${APP_DB_PORT}
+#       POSTGRES_DB: ${APP_DB_NAME}
+#       POSTGRES_USER: ${APP_DB_USER}
+#       POSTGRES_PASSWORD: ${APP_DB_PASSWORD}
+#     ports:
+#       - "5000:5000"
+#     restart: always
+
+#   ui:
+#     build:
+#       context: ..
+#       dockerfile: deployment/ui.Dockerfile
+#     depends_on:
+#       - api
+#     environment:
+#       BACKEND_BASE_URL: http://api:5000
+#     ports:
+#       - "8501:8501"
+#     restart: always
+
+# volumes:
+#   edumentor-pgdata:
+
+
+
+
+# version: "3.9"
+# services:
+#   api:
+#     build: .
+#     container_name: edumentor-api
+#     env_file:
+#       - .env
+#     ports:
+#       - "8000:8000"
+#     depends_on:
+#       - db
+#     networks:
+#       - edumentor-net
+#   db:
+#     image: postgres:16
+#     container_name: edumentor-postgres
+#     environment:
+#       POSTGRES_USER: edumentor
+#       POSTGRES_PASSWORD: edumentorpw
+#       POSTGRES_DB: edumentor
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - edumentor-pgdata:/var/lib/postgresql/data
+#     networks:
+#       - edumentor-net
+#   pgadmin:
+#     image: dpage/pgadmin4:8
+#     container_name: edumentor-pgadmin
+#     environment:
+#       PGADMIN_DEFAULT_EMAIL: admin@example.com
+#       PGADMIN_DEFAULT_PASSWORD: admin123
+#     ports:
+#       - "5050:80"
+#     networks:
+#       - edumentor-net
+# volumes:
+#   edumentor-pgdata:
+# networks:
+#   edumentor-net:
