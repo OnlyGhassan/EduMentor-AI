@@ -18,6 +18,7 @@ jobs:
         run: |
           echo "${{ secrets.VM_SSH_KEY }}" > vm_key.pem
           chmod 600 vm_key.pem
+          mkdir -p ~/.ssh                              # ✅ Create the folder if missing
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
       # 3️⃣ Deploy application
