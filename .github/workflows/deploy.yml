@@ -26,8 +26,8 @@ jobs:
             cd EduMentor-AI;
             git pull origin main;
             cd deployment;
-            docker-compose -f compose.yml --env-file .env pull;
-            docker-compose -f compose.yml --env-file .env up -d --build
+            docker compose -f compose.yml --env-file .env pull;
+            docker compose -f compose.yml --env-file .env up -d --build
           "
 
 
