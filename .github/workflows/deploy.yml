@@ -1,3 +1,6 @@
+
+
+
 name: Deploy to Azure VM
 
 on:
@@ -9,36 +12,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup SSH access
       - name: Add SSH key
         run: |
-          echo "${{ secrets.VM_SSH_KEY }}" > vm_key.pem
+          echo "${{ secrets.PROD_VM_SSH_KEY }}" > vm_key.pem
           chmod 600 vm_key.pem
-          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
-      # 3️⃣ Deploy application
       - name: Deploy on Azure VM
         run: |
-          ssh -i vm_key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
-            set -e
-            cd Edu_Mentor_AI
-            echo "Pulling latest code..."
-            git fetch origin main
-            git reset --hard origin/main
-            cd deployment
-            echo "Updating containers..."
-            docker compose -f compose.yml --env-file .env pull
-            docker compose -f compose.yml --env-file .env up -d --build
-            docker image prune -f
-          EOF
+          ssh -o StrictHostKeyChecking=no -i vm_key.pem ${{ secrets.PROD_VM_USER }}@${{ secrets.PROD_VM_HOST }} "
+            cd Edu_Mentor_AI;
+            git pull origin main;
+            cd deployment;
+            docker-compose -f compose.yml --env-file .env pull;
+            docker-compose -f compose.yml --env-file .env up -d --build
+          "
 
 
 
 
+
+
+
+# name: Deploy to Azure VM
+
+# on:
+#   push:
+#     branches: ["main"]
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       # 1️⃣ Checkout the repository
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       # 2️⃣ Setup SSH access
+#       - name: Add SSH key
+#         run: |
+#           echo "${{ secrets.VM_SSH_KEY }}" > vm_key.pem
+#           chmod 600 vm_key.pem
+#           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+#       # 3️⃣ Deploy application
+#       - name: Deploy on Azure VM
+#         run: |
+#           ssh -i vm_key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+#             set -e
+#             cd Edu_Mentor_AI
+#             echo "Pulling latest code..."
+#             git pull 
+#             cd deployment
+#             echo "Updating containers..."
+#             docker compose -f compose.yml --env-file .env pull
+#             docker compose -f compose.yml --env-file .env up -d --build
+#             docker image prune -f
+#           EOF
 
 
 
