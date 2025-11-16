@@ -1,3 +1,6 @@
+
+
+
 name: Deploy to Azure VM
 
 on:
@@ -7,10 +10,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
-    env:
-      DOCKER_BUILDKIT: 1        # 🚀 Enables BuildKit globally
-      COMPOSE_DOCKER_CLI_BUILD: 1
 
     steps:
       - name: Checkout code
@@ -24,54 +23,13 @@ jobs:
       - name: Deploy on Azure VM
         run: |
           ssh -o StrictHostKeyChecking=no -i vm_key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
-            set -e
-            cd EduMentor-AI
-            git pull origin main
-            cd deployment
-
-            echo "🔄 Building with BuildKit..."
-            export DOCKER_BUILDKIT=1
-            export COMPOSE_DOCKER_CLI_BUILD=1
-
-            docker compose -f compose.yml --env-file .env pull
-            docker compose -f compose.yml --env-file .env build --pull
-            docker compose -f compose.yml --env-file .env up -d
+            cd EduMentor-AI;
+            source .venv/bin/activate;
+            git pull origin main;
+            cd deployment;
+            docker compose -f compose.yml --env-file .env pull;
+            docker compose -f compose.yml --env-file .env up -d --build
           "
-
-
-
-
-
-
-
-# name: Deploy to Azure VM
-
-# on:
-#   push:
-#     branches: ["main"]
-
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v4
-
-#       - name: Add SSH key
-#         run: |
-#           echo "${{ secrets.VM_SSH_KEY }}" > vm_key.pem 
-#           chmod 600 vm_key.pem
-
-#       - name: Deploy on Azure VM
-#         run: |
-#           ssh -o StrictHostKeyChecking=no -i vm_key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
-#             cd EduMentor-AI;
-#             git pull origin main;
-#             cd deployment;
-#             docker compose -f compose.yml --env-file .env pull;
-#             docker compose -f compose.yml --env-file .env up -d --build
-#           "
 
 
 
