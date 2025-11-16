@@ -52,7 +52,7 @@ services:
       BACKEND_BASE_URL: http://api:5000
     working_dir: /app
     volumes:
-      - ../app/frontend.py:/app/frontend.py
+      - ../app:/app
     ports:
       - "8501:8501"
     restart: always
