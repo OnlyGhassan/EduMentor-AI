@@ -1,0 +1,31 @@
+[
+  {
+    "specialty": "Python",
+    "score": 1,
+    "total": 3,
+    "feedback": [
+      {
+        "question": "What is the correct way to start a while loop in Python?",
+        "user_answer": "A) while x > 6",
+        "correct_answer": "B) while x > 6:",
+        "result": "Incorrect \u274c",
+        "feedback": "Feedback: Your answer is incorrect. The correct syntax to start a while loop in Python is \"while x > 6:\". The colon at the end is necessary to indicate the start of the block of statements that the loop will execute."
+      },
+      {
+        "question": "How do you create a function in Python?",
+        "user_answer": "C) def functionName{}",
+        "correct_answer": "A) def functionName():",
+        "result": "Incorrect \u274c",
+        "feedback": "Feedback: Your answer is incorrect. In Python, functions are defined using the \"def\" keyword followed by the function name and parentheses. The correct syntax is \"def functionName():\". Therefore, the correct answer is A) def functionName():."
+      },
+      {
+        "question": "What is the correct syntax to output the type of a variable or object in Python?",
+        "user_answer": "C) print(type(variable))",
+        "correct_answer": "C) print(type(variable))",
+        "result": "Correct \u2705",
+        "feedback": "Feedback: Your answer is correct. In Python, the type() function is used to know which class a variable or a value belongs to. The correct syntax is type(object). So, to print the type of a variable, you should use print(type(variable))."
+      }
+    ],
+    "recommendations": "The user seems to have a basic understanding of Python syntax, but they made mistakes in all the questions. Here are some recommendations and tips for improvement:\n\n1. Understand Python Syntax: The user needs to improve their understanding of Python syntax. They should focus on understanding the correct way to output the type of a variable or object, how to create a function, and how to start a while loop in Python. \n\n2. Practice Coding: The user should practice coding in Python regularly. This will help them get familiar with the syntax and improve their coding skills. They can use online platforms like HackerRank, LeetCode, or Codecademy for practice.\n\n3. Use Python Documentation: Python's official documentation is a comprehensive resource that explains all aspects of the language. The user should use it to understand the different syntaxes and their usage.\n\n4. Online Courses and Tutorials: The user can take online courses or watch video tutorials on Python. Websites like Coursera, Udemy, and YouTube have many courses and tutorials on Python.\n\n5. Read Code: Reading other people's code can also help the user understand how to use different Python syntaxes. They can find Python projects on websites like GitHub to read and understand.\n\n6. Debugging: The user should learn how to debug their code. This will help them understand their mistakes and improve their coding skills."
+  }
+]

@@ -13,6 +13,8 @@ import re, json
 import time
 from typing import Optional
 import os
+from fpdf import FPDF
+import base64
 
 
 #BACKEND_BASE = "http://localhost:8000"
@@ -155,25 +157,28 @@ L =  TXT
 
 
 
-
-
-
+#######################################
+# ---------------- AUTH DIALOG ----------------
 @st.dialog("🔐 Authentication")
 def auth_dialog():
-    if "token" not in st.session_state:
+    # Track login/signup mode
+    if "show_signup" not in st.session_state:
+        st.session_state.show_signup = False
+
+    # ------ LOGIN FORM ------
+    if not st.session_state.show_signup:
         st.subheader(L["login"])
 
-        # --- Login form ---
         with st.form("login_form", clear_on_submit=False):
             email = st.text_input(L["email"])
             password = st.text_input(L["password"], type="password")
             do_login = st.form_submit_button(L["login"])
+
         if do_login:
             try:
                 resp = api_request(
-                    "POST",
-                    "/auth/login",
-                    data={"username": email, "password": password},
+                    "POST", "/auth/login",
+                    data={"username": email, "password": password}
                 )
                 token = resp.json()["access_token"]
                 st.session_state["token"] = token
@@ -184,40 +189,121 @@ def auth_dialog():
             except Exception as e:
                 st.error(str(e))
 
-        st.write(L["or"])
+        if st.button("Create Account", type="tertiary"):
+            st.session_state.show_signup = True
+            st.rerun()
 
-        # --- Register form ---
+    # ------ SIGNUP FORM ------
+    else:
+        st.subheader(L["register"])
+
         with st.form("register_form", clear_on_submit=False):
             r_name = st.text_input(L["name"], key="reg_name")
             r_email = st.text_input(L["email"], key="reg_email")
-            r_password = st.text_input(L["password"], type="password", key="reg_pass")
+            r_password = st.text_input(
+                L["password"], type="password", key="reg_pass"
+            )
             do_register = st.form_submit_button(L["register"])
+
         if do_register:
             try:
                 resp = api_request(
-                    "POST",
-                    "/auth/register",
-                    json={"name": r_name, "email": r_email, "password": r_password},
+                    "POST", "/auth/register",
+                    json={"name": r_name, "email": r_email, "password": r_password}
                 )
-                st.success(L["register"] + " ✔ — now log in.")
+                st.success("Account created! Now log in.")
+                st.session_state.show_signup = False  # go back to login
             except Exception as e:
                 st.error(str(e))
-   
 
+        if st.button("Login", type="tertiary"):
+            st.session_state.show_signup = False
+            st.rerun()
 
 with st.sidebar:
-    # If user is not logged in → show "Log in / Register" button
+    # If user is not logged in
     if "token" not in st.session_state:
-        if st.button("🔐 Log in / Register", use_container_width=True):
+
+        if "must_show_login" not in st.session_state:
+            st.session_state.must_show_login = False
+
+        if st.button("🔐 Log in", use_container_width=True):
+            st.session_state.must_show_login = True
+            st.rerun()
+
+        # Auto-open login dialog if flag is set
+        if st.session_state.must_show_login:
+            st.session_state.must_show_login = False
             auth_dialog()
 
-    # If user is logged in → show "Hello" + Logout button directly
+    # If logged in
     else:
         user = st.session_state.get("user", {})
-        st.write(f"👋 {L['hello']}, {user.get('name', 'User')}!")
+        st.write(f"👋 {L['hello']}, {user.get('name','User')}")
         if st.button("🚪 " + L["logout"], use_container_width=True):
             clear_auth()
             st.rerun()
+
+# @st.dialog("🔐 Authentication")
+# def auth_dialog():
+#     if "token" not in st.session_state:
+#         st.subheader(L["login"])
+
+#         # --- Login form ---
+#         with st.form("login_form", clear_on_submit=False):
+#             email = st.text_input(L["email"])
+#             password = st.text_input(L["password"], type="password")
+#             do_login = st.form_submit_button(L["login"])
+#         if do_login:
+#             try:
+#                 resp = api_request(
+#                     "POST",
+#                     "/auth/login",
+#                     data={"username": email, "password": password},
+#                 )
+#                 token = resp.json()["access_token"]
+#                 st.session_state["token"] = token
+#                 me = api_request("GET", "/auth/me").json()
+#                 set_auth(token, me)
+#                 st.success(f"{L['you_are_in']} {me['name']}")
+#                 st.rerun()
+#             except Exception as e:
+#                 st.error(str(e))
+
+#         st.write(L["or"])
+
+#         # --- Register form ---
+#         with st.form("register_form", clear_on_submit=False):
+#             r_name = st.text_input(L["name"], key="reg_name")
+#             r_email = st.text_input(L["email"], key="reg_email")
+#             r_password = st.text_input(L["password"], type="password", key="reg_pass")
+#             do_register = st.form_submit_button(L["register"])
+#         if do_register:
+#             try:
+#                 resp = api_request(
+#                     "POST",
+#                     "/auth/register",
+#                     json={"name": r_name, "email": r_email, "password": r_password},
+#                 )
+#                 st.success(L["register"] + " ✔ — now log in.")
+#             except Exception as e:
+#                 st.error(str(e))
+   
+
+
+# with st.sidebar:
+#     # If user is not logged in → show "Log in / Register" button
+#     if "token" not in st.session_state:
+#         if st.button("🔐 Log in / Register", use_container_width=True):
+#             auth_dialog()
+
+#     # If user is logged in → show "Hello" + Logout button directly
+#     else:
+#         user = st.session_state.get("user", {})
+#         st.write(f"👋 {L['hello']}, {user.get('name', 'User')}!")
+#         if st.button("🚪 " + L["logout"], use_container_width=True):
+#             clear_auth()
+#             st.rerun()
 
 
 
@@ -250,23 +336,6 @@ if "token" in st.session_state:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#test
 
 # st.sidebar.markdown("---")
 if "current_page" not in st.session_state:
@@ -751,7 +820,7 @@ if st.session_state.current_page == "chat":
         st.session_state.quiz_history[sid] = []
 
     # --- Step 1: Quiz Settings ---
-    @st.dialog("🧠 Quiz Settings") 
+    @st.dialog("🧠 Quiz Settings")
     def quiz_settings():
         st.markdown("### ⚙️ Quiz Options")
         difficulty = st.selectbox("Select quiz difficulty:", ["Easy", "Medium", "Hard"])
@@ -810,7 +879,7 @@ if st.session_state.current_page == "chat":
 
 
     # --- Step 3: Show Results ----
-    @st.dialog("🏆 Quiz Results", on_dismiss="rerun")
+    @st.dialog("🏆 Quiz Results", dismissible=False)
     def show_results():
         results = []
         for i, q in enumerate(st.session_state.quiz_data):
@@ -862,7 +931,7 @@ if st.session_state.current_page == "chat":
         add_message_to_session("assistant", quiz_md, "quiz")
 
         # --- Option to retake quiz ---
-        if st.button("Take Another Quiz"):
+        if st.button("Done", use_container_width=True):
             st.session_state.quiz_data = None
             st.session_state.quiz_answers = {}
             st.session_state.quiz_started = False
@@ -884,8 +953,106 @@ if st.session_state.current_page == "chat":
 
     ###############
 
+    # # --- REPORT Dialog ---
+    # @st.dialog("📊 Generate Report",on_dismiss="rerun")
+    # def open_report_dialog():
+    #     if (
+    #         "quiz_history" not in st.session_state
+    #         or sid not in st.session_state.quiz_history
+    #         or len(st.session_state.quiz_history[sid]) == 0
+    #     ):
+    #         st.warning("No quiz results found for this session. Please complete at least one quiz first.")
+    #     else:
+    #         report_type = st.radio("Select report type:", ["Performance based on quiz results"])
+    #         if st.button("Generate Report"):
+    #             all_results = st.session_state.quiz_history[sid]
+    #             payload = {
+    #                 "text": json.dumps(all_results),
+    #                 "lang": "en",
+    #                 "report_type": report_type.lower(),
+    #             }
+    #             with st.spinner("Generating report... ⏳"):
+    #                 try:
+    #                     resp = api_request("POST", f"/session/{sid}/generate/report", data=payload)
+    #                     if resp.status_code == 200:
+    #                         data = resp.json()
+    #                         report_output = data.get("reply", "No response from backend.")
+    #                         add_message_to_session("assistant", report_output, "report")
+    #                         st.markdown("### ✅ Generated Report:")
+    #                         st.markdown(report_output)
+
+    #                     else:
+    #                         st.error(f"Failed: {resp.text}")
+    #                 except Exception as e:
+    #                     st.error(f"Error: {e}")
+
+    # # --- REPORT Dialog ---
+    # @st.dialog("📊 Generate Report", on_dismiss="rerun")
+    # def open_report_dialog():
+    #     if (
+    #         "quiz_history" not in st.session_state
+    #         or sid not in st.session_state.quiz_history
+    #         or len(st.session_state.quiz_history[sid]) == 0
+    #     ):
+    #         st.warning("No quiz results found for this session. Please complete at least one quiz first.")
+    #     else:
+    #         report_type = st.radio("Select report type:", ["Performance based on quiz results"])
+
+    #         if st.button("Generate Report"):
+    #             all_results = st.session_state.quiz_history[sid]
+    #             payload = {
+    #                 "text": json.dumps(all_results),
+    #                 "lang": "en",
+    #                 "report_type": report_type.lower(),
+    #             }
+
+    #             with st.spinner("Generating report... ⏳"):
+    #                 try:
+    #                     resp = api_request("POST", f"/session/{sid}/generate/report", data=payload)
+
+    #                     if resp.status_code == 200:
+    #                         data = resp.json()
+    #                         report_output = data.get("reply", "No response from backend.")
+    #                         add_message_to_session("assistant", report_output, "report")
+
+    #                         st.markdown("### ✅ Generated Report:")
+    #                         st.markdown(report_output)
+
+    #                         # ---------------------------
+    #                         #      PDF GENERATION
+    #                         # ---------------------------
+    #                         from fpdf import FPDF
+
+    #                         def generate_pdf(content):
+    #                             pdf = FPDF()
+    #                             pdf.add_page()
+    #                             pdf.set_auto_page_break(auto=True, margin=15)
+    #                             pdf.set_font("Arial", size=12)
+
+    #                             for line in content.split("\n"):
+    #                                 pdf.multi_cell(0, 10, line)
+
+    #                             return pdf.output(dest="S").encode("latin1")
+
+    #                         pdf_bytes = generate_pdf(report_output)
+
+    #                         # --- Download button ---
+    #                         st.download_button(
+    #                             label="⬇️ Download PDF Report",
+    #                             data=pdf_bytes,
+    #                             file_name="quiz_report.pdf",
+    #                             mime="application/pdf"
+    #                         )
+    #                         # ---------------------------
+
+    #                     else:
+    #                         st.error(f"Failed: {resp.text}")
+
+    #                 except Exception as e:
+    #                     st.error(f"Error: {e}")
+
     # --- REPORT Dialog ---
-    @st.dialog("📊 Generate Report",on_dismiss="rerun")
+    @st.dialog("📊 Generate Report", on_dismiss="rerun")
     def open_report_dialog():
         if (
             "quiz_history" not in st.session_state
@@ -895,6 +1062,7 @@ if st.session_state.current_page == "chat":
             st.warning("No quiz results found for this session. Please complete at least one quiz first.")
         else:
             report_type = st.radio("Select report type:", ["Performance based on quiz results"])
+
             if st.button("Generate Report"):
                 all_results = st.session_state.quiz_history[sid]
                 payload = {
@@ -902,20 +1070,54 @@ if st.session_state.current_page == "chat":
                     "lang": "en",
                     "report_type": report_type.lower(),
                 }
+
                 with st.spinner("Generating report... ⏳"):
                     try:
                         resp = api_request("POST", f"/session/{sid}/generate/report", data=payload)
+
                         if resp.status_code == 200:
                             data = resp.json()
                             report_output = data.get("reply", "No response from backend.")
                             add_message_to_session("assistant", report_output, "report")
+
                             st.markdown("### ✅ Generated Report:")
                             st.markdown(report_output)
 
+                            # ---------------------------
+                            #      PDF GENERATION
+                            # ---------------------------
+                            from fpdf import FPDF
+                            import base64
+
+                            def generate_pdf(content):
+                                pdf = FPDF()
+                                pdf.add_page()
+                                pdf.set_auto_page_break(auto=True, margin=15)
+                                pdf.set_font("Arial", size=12)
+
+                                for line in content.split("\n"):
+                                    pdf.multi_cell(0, 10, line)
+
+                                return pdf.output(dest="S").encode("latin1")
+
+                            pdf_bytes = generate_pdf(report_output)
+
+                            # --- HREF-style Download Link ---
+                            pdf_base64 = base64.b64encode(pdf_bytes).decode("utf-8")
+                            pdf_link = f'<a href="data:application/pdf;base64,{pdf_base64}" download="quiz_report.pdf">⬇️ Download PDF Report</a>'
+                            st.markdown(pdf_link, unsafe_allow_html=True)
+                            # ---------------------------
+
                         else:
                             st.error(f"Failed: {resp.text}")
+
                     except Exception as e:
                         st.error(f"Error: {e}")
+
+
+
+
+
 
 
     ############
