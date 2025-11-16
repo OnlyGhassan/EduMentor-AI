@@ -751,7 +751,7 @@ if st.session_state.current_page == "chat":
         st.session_state.quiz_history[sid] = []
 
     # --- Step 1: Quiz Settings ---
-    @st.dialog("🧠 Quiz Settings")
+    @st.dialog("🧠 Quiz Settings") 
     def quiz_settings():
         st.markdown("### ⚙️ Quiz Options")
         difficulty = st.selectbox("Select quiz difficulty:", ["Easy", "Medium", "Hard"])

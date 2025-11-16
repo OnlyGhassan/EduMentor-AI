@@ -24,7 +24,6 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i vm_key.pem ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} "
             cd EduMentor-AI;
-            source .venv/bin/activate;
             git pull origin main;
             cd deployment;
             docker compose -f compose.yml --env-file .env pull;
