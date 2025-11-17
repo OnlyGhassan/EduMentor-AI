@@ -25,3 +25,4 @@ Our goal was to build a platform that makes personalized learning simple, effect
 - `.github/workflows/deploy.yml` – GitHub Actions for CI/CD  
 - `app/requirements.txt` – Project dependencies  
 - `README.md` – Project documentation  
+
