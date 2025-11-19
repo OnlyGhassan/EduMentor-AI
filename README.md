@@ -1,8 +1,9 @@
 ![alt text](<images/Logo.png>)
 ---
 ## 🌟Project Overview
-EduMentor AI is an **ALL-IN-ONE** intelligent tutoring and educational assistant platform that helps students with personalized learning, including summarization, flashcard generation, resource discovery, grammar checking, generating and grading quizzes, progress tracking, and reviewing job-related technical skills.
-Our goal was to build a platform that makes personalized learning simple, effective, and interactive.
+**EduMentor AI** is an **ALL-IN-ONE** intelligent tutoring platform that brings the entire learning experience together in one place. It offers **summarization**, **flashcards**, **explanations**, **resource discovery**, **grammar checking**, **quiz generation and grading**, **progress tracking**, and **technical skill assessment with detailed feedback and recommendations**—all within a single platform.
+By centralizing the learning process, **EduMentor AI** helps learners **study smarter**, **stay organized**, and **learn faster** without the need to juggle multiple tools.
+
 
 ---
 
@@ -25,4 +26,5 @@ Our goal was to build a platform that makes personalized learning simple, effect
 - `.github/workflows/deploy.yml` – GitHub Actions for CI/CD  
 - `app/requirements.txt` – Project dependencies  
 - `README.md` – Project documentation  
+
 
