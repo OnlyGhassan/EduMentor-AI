@@ -1,37 +1,5 @@
 ![alt text](<images/Logo.png>)
 ---
-## 🌟Project Overview
-**EduMentor AI** is an **ALL-IN-ONE** intelligent tutoring platform that brings the entire learning experience together in one place. It offers **summarization**, **flashcards**, **explanations**, **resource discovery**, **grammar checking**, **quiz generation and grading**, **progress tracking**, and **technical skill assessment with detailed feedback and recommendations**—all within a single platform.
-By centralizing the learning process, **EduMentor AI** helps learners **study smarter**, **stay organized**, and **learn faster** without the need to juggle multiple tools.
-
-
----
-
-## 💡The Technology Behind EduMentor AI
-<img src="images/Technology.png" alt="Diagram" width="600"/>
----
-
-## 🔄 How EduMentor AI Works ?
-
-| Action | Description |
-|-------|-------------|
-| **User Inputs Content or Question** | The student enters text, uploads material, then selects a task (summarize, quiz, etc.). |
-| **System Processes the Request** | The platform analyzes the input and identifies the required learning support type. |
-| **AI Model Generates Output** | The AI model produces the needed result (summary, flashcards, quiz, etc.). |
-| **Result is Displayed to the User** | The generated content is shown in an organized and easy-to-understand format. |
-| **Feedback & Progress Tracking** | Performance data is stored and used to guide future learning recommendations. |
-## ⚙️ Project Structure
-- `app/backend/main.py` – FastAPI backend code  
-- `app/frontend.py` – Streamlit frontend code  
-- `.github/workflows/deploy.yml` – GitHub Actions for CI/CD  
-- `app/requirements.txt` – Project dependencies  
-- `README.md` – Project documentation  
-
-
-
-
-
----
 
 # 🎓 EduMentor AI – Intelligent Tutoring & Learning Assistant
 
@@ -51,22 +19,20 @@ The goal is to make **personalized learning simple and accessible** for everyone
 
 ---
 
-## 🌟 How EduMentor AI Works
+## 💡The Technology Behind EduMentor AI
+<img src="images/Technology.png" alt="Diagram" width="600"/>
 
-1. **User Inputs Content or Question**
-   The student types a question or uploads material, and chooses a task (e.g., summarize, create quiz, generate flashcards, etc.).
+---
 
-2. **System Processes the Request**
-   The platform analyzes the input and understands what kind of learning support is needed.
+## 🌟 How EduMentor AI Works ?
 
-3. **AI Model Generates Output**
-   The AI creates the requested content: summary, flashcards, quiz questions, explanations, etc.
-
-4. **Result is Displayed to the User**
-   The output is shown in a clean, organized interface that’s easy to read and interact with.
-
-5. **Feedback & Progress Tracking**
-   The student’s activity and performance can be used to guide future learning recommendations.
+| Action | Description |
+|-------|-------------|
+| **User Inputs Content or Question** | The student enters text, uploads material, then selects a task (summarize, quiz, etc.). |
+| **System Processes the Request** | The platform analyzes the input and identifies the required learning support type. |
+| **AI Model Generates Output** | The AI model produces the needed result (summary, flashcards, quiz, etc.). |
+| **Result is Displayed to the User** | The generated content is shown in an organized and easy-to-understand format. |
+| **Feedback & Progress Tracking** | Performance data is stored and used to guide future learning recommendations. |
 
 ---
 
@@ -175,7 +141,7 @@ pip install -r requirements.txt
 cd ..
 ```
 
-You can deactivate later with:
+You can deactivate later (after finshing) with:
 
 ```bash
 deactivate
@@ -611,3 +577,4 @@ You now know how to:
 * Deploy EduMentor AI to a **cloud VM (Azure/AWS)** using SSH, Docker, and environment variables.
 
 This should be enough for someone starting from scratch to **clone, configure, run, and experiment** with EduMentor AI both locally and in the cloud.
+
